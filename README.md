@@ -37,6 +37,7 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=appdb
 APP_PORT=8000
+JWT_SECRET=secret
 
 DATABASE_URL=postgres://postgres:postgres@localhost:6543/appdb?sslmode=disable
 DATABASE_DEV_URL=postgres://postgres:postgres@localhost:6543/appdb_dev?sslmode=disable

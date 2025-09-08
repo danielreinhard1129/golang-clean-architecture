@@ -22,6 +22,10 @@ func main() {
 	userUsecase := usecase.NewUserUsecase(&userRepository)
 	userHandler := handler.NewUserHandler(&userUsecase)
 
+	// auth
+	authUsecase := usecase.NewAuthUsecase(&userRepository, config)
+	authHandler := handler.NewAuthHandler(&authUsecase)
+
 	// fiber
 	app := fiber.New(configs.NewFiberConfiguration())
 	app.Use(cors.New())
@@ -30,6 +34,7 @@ func main() {
 
 	// routes
 	userHandler.Route(app)
+	authHandler.Route(app)
 
 	err := app.Listen(":" + config.Get("APP_PORT"))
 	exception.PanicLogging(err)
