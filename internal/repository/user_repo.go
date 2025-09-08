@@ -9,10 +9,12 @@ import (
 )
 
 type UserRepository interface {
-	FindAll(search string, offset, limit int) ([]entities.User, int64)
+	FindAll(search, orderBy, sort string, offset, limit int) ([]entities.User, int64)
 	FindById(id int) (entities.User, error)
 	FindByEmail(email string) (entities.User, error)
 	Create(user entities.User) (entities.User, error)
+	Update(id int, updatedUser entities.User) (entities.User, error)
+	Delete(id int) error
 }
 
 type userRepositoryImpl struct {
@@ -23,7 +25,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepositoryImpl{DB: db}
 }
 
-func (r *userRepositoryImpl) FindAll(search string, offset, limit int) ([]entities.User, int64) {
+func (r *userRepositoryImpl) FindAll(search, orderBy, sort string, offset, limit int) ([]entities.User, int64) {
 	var users []entities.User
 	var total int64
 
@@ -35,6 +37,13 @@ func (r *userRepositoryImpl) FindAll(search string, offset, limit int) ([]entiti
 
 	if err := query.Count(&total).Error; err != nil {
 		return []entities.User{}, 0
+	}
+
+	if orderBy != "" {
+		if sort != "asc" && sort != "desc" {
+			sort = "desc"
+		}
+		query = query.Order(orderBy + " " + sort)
 	}
 
 	if err := query.Limit(limit).Offset(offset).Find(&users).Error; err != nil {
@@ -69,4 +78,37 @@ func (r *userRepositoryImpl) FindByEmail(email string) (entities.User, error) {
 func (r *userRepositoryImpl) Create(user entities.User) (entities.User, error) {
 	err := r.DB.Create(&user).Error
 	return user, err
+}
+
+func (r *userRepositoryImpl) Update(id int, updatedUser entities.User) (entities.User, error) {
+	var user entities.User
+	if err := r.DB.First(&user, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entities.User{}, exception.NotFoundError{Message: "user not found"}
+		}
+		return entities.User{}, err
+	}
+
+	if err := r.DB.Model(&user).Updates(updatedUser).Error; err != nil {
+		return entities.User{}, err
+	}
+
+	return user, nil
+}
+
+func (r *userRepositoryImpl) Delete(id int) error {
+	var user entities.User
+
+	if err := r.DB.First(&user, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return exception.NotFoundError{Message: "user not found"}
+		}
+		return err
+	}
+
+	if err := r.DB.Delete(&user).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

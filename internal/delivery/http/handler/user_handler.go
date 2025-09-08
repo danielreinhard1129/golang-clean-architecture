@@ -24,12 +24,14 @@ func (h UserHandler) Route(app *fiber.App) {
 	app.Get("/v1/users", h.FindAll)
 	app.Get("/v1/users/:id", h.FindById)
 	app.Post("/v1/users", h.Create)
+	app.Patch("/v1/users/:id", h.Update)
+	app.Delete("/v1/users/:id", h.Delete)
 }
 
 func (handler UserHandler) FindAll(c *fiber.Ctx) error {
 	qp := request.ParseAndValidate(c)
 
-	result, total := handler.UserUsecase.FindAll(qp.Search, qp.Page, qp.Limit)
+	result, total := handler.UserUsecase.FindAll(qp.Search, qp.OrderBy, qp.Sort, qp.Page, qp.Limit)
 
 	return c.Status(fiber.StatusOK).JSON(pagination.Response[entities.User]{
 		Data: result,
@@ -66,4 +68,37 @@ func (handler UserHandler) Create(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(result)
+}
+
+func (handler UserHandler) Update(c *fiber.Ctx) error {
+	var reqBody request.UserUpdateRequest
+	err := c.BodyParser(&reqBody)
+	exception.PanicLogging(err)
+
+	id, err := strconv.Atoi(c.Params("id"))
+	exception.PanicLogging(err)
+
+	validation.Validate(&reqBody)
+
+	result, err := handler.UserUsecase.Update(id, &reqBody)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(result)
+
+}
+
+func (handler UserHandler) Delete(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	exception.PanicLogging(err)
+
+	err = handler.UserUsecase.Delete(id)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "user deleted successfully",
+	})
 }
