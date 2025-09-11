@@ -3,6 +3,7 @@ package handler
 import (
 	"strconv"
 
+	"github.com/danielreinhard1129/fiber-clean-arch/internal/delivery/http/middleware"
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/delivery/http/request"
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/entities"
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/usecase"
@@ -20,18 +21,18 @@ func NewUserHandler(usecase *usecase.UserUsecase) *UserHandler {
 	return &UserHandler{UserUsecase: *usecase}
 }
 
-func (h UserHandler) Route(app *fiber.App) {
-	app.Get("/v1/users", h.FindAll)
+func (h *UserHandler) Route(app *fiber.App) {
+	app.Get("/v1/users", middleware.JWTProtected(), middleware.RequireRoles("USER"), h.FindAll)
 	app.Get("/v1/users/:id", h.FindById)
 	app.Post("/v1/users", h.Create)
 	app.Patch("/v1/users/:id", h.Update)
 	app.Delete("/v1/users/:id", h.Delete)
 }
 
-func (handler UserHandler) FindAll(c *fiber.Ctx) error {
+func (h *UserHandler) FindAll(c *fiber.Ctx) error {
 	qp := request.ParseAndValidate(c)
 
-	result, total := handler.UserUsecase.FindAll(qp.Search, qp.OrderBy, qp.Sort, qp.Page, qp.Limit)
+	result, total := h.UserUsecase.FindAll(qp.Search, qp.OrderBy, qp.Sort, qp.Page, qp.Limit)
 
 	return c.Status(fiber.StatusOK).JSON(pagination.Response[entities.User]{
 		Data: result,
@@ -43,11 +44,11 @@ func (handler UserHandler) FindAll(c *fiber.Ctx) error {
 	})
 }
 
-func (handler UserHandler) FindById(c *fiber.Ctx) error {
+func (h *UserHandler) FindById(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	exception.PanicLogging(err)
 
-	result, err := handler.UserUsecase.FindById(id)
+	result, err := h.UserUsecase.FindById(id)
 	if err != nil {
 		return err
 	}
@@ -55,14 +56,14 @@ func (handler UserHandler) FindById(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(result)
 }
 
-func (handler UserHandler) Create(c *fiber.Ctx) error {
+func (h *UserHandler) Create(c *fiber.Ctx) error {
 	var reqBody request.UserCreateRequest
 	err := c.BodyParser(&reqBody)
 	exception.PanicLogging(err)
 
 	validation.Validate(&reqBody)
 
-	result, err := handler.UserUsecase.Create(&reqBody)
+	result, err := h.UserUsecase.Create(&reqBody)
 	if err != nil {
 		return err
 	}
@@ -70,7 +71,7 @@ func (handler UserHandler) Create(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(result)
 }
 
-func (handler UserHandler) Update(c *fiber.Ctx) error {
+func (h *UserHandler) Update(c *fiber.Ctx) error {
 	var reqBody request.UserUpdateRequest
 	err := c.BodyParser(&reqBody)
 	exception.PanicLogging(err)
@@ -80,7 +81,7 @@ func (handler UserHandler) Update(c *fiber.Ctx) error {
 
 	validation.Validate(&reqBody)
 
-	result, err := handler.UserUsecase.Update(id, &reqBody)
+	result, err := h.UserUsecase.Update(id, &reqBody)
 	if err != nil {
 		return err
 	}
@@ -89,11 +90,11 @@ func (handler UserHandler) Update(c *fiber.Ctx) error {
 
 }
 
-func (handler UserHandler) Delete(c *fiber.Ctx) error {
+func (h *UserHandler) Delete(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	exception.PanicLogging(err)
 
-	err = handler.UserUsecase.Delete(id)
+	err = h.UserUsecase.Delete(id)
 	if err != nil {
 		return err
 	}

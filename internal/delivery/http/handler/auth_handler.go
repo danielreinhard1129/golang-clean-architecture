@@ -16,18 +16,18 @@ func NewAuthHandler(usecase *usecase.AuthUsecase) *AuthHandler {
 	return &AuthHandler{AuthUsecase: *usecase}
 }
 
-func (h AuthHandler) Route(app *fiber.App) {
+func (h *AuthHandler) Route(app *fiber.App) {
 	app.Post("/v1/auth/login", h.Login)
 }
 
-func (handler AuthHandler) Login(c *fiber.Ctx) error {
+func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var reqBody request.AuthLoginRequest
 	err := c.BodyParser(&reqBody)
 	exception.PanicLogging(err)
 
 	validation.Validate(&reqBody)
 
-	result, err := handler.AuthUsecase.Login(&reqBody)
+	result, err := h.AuthUsecase.Login(&reqBody)
 	if err != nil {
 		return err
 	}

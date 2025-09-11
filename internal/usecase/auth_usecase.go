@@ -37,8 +37,10 @@ func (u *authUsecaseImpl) Login(reqBody *request.AuthLoginRequest) (entities.Aut
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":  user.ID,
-		"exp": time.Now().Add(time.Hour * 72).Unix(), // exp 3 days
+		"id":    user.ID,
+		"email": user.Email,
+		"role":  user.Role,
+		"exp":   time.Now().Add(time.Hour * 72).Unix(), // exp 3 days
 	})
 
 	tokenString, err := token.SignedString([]byte(u.config.Get("JWT_SECRET")))
