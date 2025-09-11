@@ -7,6 +7,7 @@ import (
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/entities"
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/repository"
 	"github.com/danielreinhard1129/fiber-clean-arch/pkg/exception"
+	"github.com/danielreinhard1129/fiber-clean-arch/pkg/mail"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,11 +20,12 @@ type UserUsecase interface {
 }
 
 type userUsecaseImpl struct {
-	repo repository.UserRepository
+	repo        repository.UserRepository
+	mailService mail.Service
 }
 
-func NewUserUsecase(repository *repository.UserRepository) UserUsecase {
-	return &userUsecaseImpl{repo: *repository}
+func NewUserUsecase(repository *repository.UserRepository, mailService *mail.Service) UserUsecase {
+	return &userUsecaseImpl{repo: *repository, mailService: *mailService}
 }
 
 func (u *userUsecaseImpl) FindAll(search, orderBy, sort string, page, limit int) ([]entities.User, int64) {
@@ -55,6 +57,18 @@ func (u *userUsecaseImpl) Create(reqBody *request.UserCreateRequest) (entities.U
 		Email:    reqBody.Email,
 		Password: hashedPassword,
 	}
+
+	go func() {
+		err := u.mailService.SendMail(
+			user.Email,
+			"Welcome to MyApp",
+			"welcome.html",
+			map[string]any{"Name": user.Name},
+		)
+		if err != nil {
+			println("failed to send email:", err.Error())
+		}
+	}()
 
 	return u.repo.Create(user)
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/repository"
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/usecase"
 	"github.com/danielreinhard1129/fiber-clean-arch/pkg/exception"
+	"github.com/danielreinhard1129/fiber-clean-arch/pkg/mail"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -16,10 +17,14 @@ func main() {
 	// configurations
 	config := configs.New()
 	db := configs.NewDatabase(config)
+	e := configs.NewEmail(config)
+
+	// services
+	mailService := mail.NewMailService(e.Host, e.Port, e.Username, e.Password, e.From)
 
 	// user
 	userRepository := repository.NewUserRepository(db)
-	userUsecase := usecase.NewUserUsecase(&userRepository)
+	userUsecase := usecase.NewUserUsecase(&userRepository, mailService)
 	userHandler := handler.NewUserHandler(&userUsecase)
 
 	// auth

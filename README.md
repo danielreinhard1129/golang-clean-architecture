@@ -42,6 +42,12 @@ JWT_SECRET=secret
 DATABASE_URL=postgres://postgres:postgres@localhost:6543/appdb?sslmode=disable
 DATABASE_DEV_URL=postgres://postgres:postgres@localhost:6543/appdb_dev?sslmode=disable
 
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=email@mail.com
+SMTP_PASS=app_password
+SMTP_FROM=email@mail.com
+
 ```
 
 ### 4. Start database (Recommended: Docker)
