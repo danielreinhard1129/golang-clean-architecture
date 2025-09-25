@@ -47,6 +47,15 @@ func ErrorHandler(ctx *fiber.Ctx, err error) error {
 		})
 	}
 
+	_, badRequestError := err.(BadRequestError)
+	if badRequestError {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"code":    400,
+			"message": "Bad Request",
+			"data":    err.Error(),
+		})
+	}
+
 	return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 		"code":    500,
 		"message": "Error",

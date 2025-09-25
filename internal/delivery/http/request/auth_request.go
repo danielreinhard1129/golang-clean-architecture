@@ -10,3 +10,8 @@ type AuthRegisterRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=6"`
 }
+
+type AuthVerifyAccountRequest struct {
+	Email string `json:"email" validate:"required,email"`
+	Otp   string `json:"otp" validate:"required"`
+}

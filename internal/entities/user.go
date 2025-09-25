@@ -16,10 +16,11 @@ type User struct {
 	Password   string     `gorm:"size:255;not null" json:"-"`
 	Image      *string    `gorm:"size:255;" json:"image"` // nullable
 	Role       Role       `gorm:"type:varchar(20);not null;default:'USER'" json:"role"`
-	Tokens     []Token    `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"tokens,omitempty"`
 	VerifiedAt *time.Time `json:"verified_at"`
 	CreatedAt  time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt  time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+
+	VerificationCodes []VerificationCode `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;" json:"tokens,omitempty"`
 }
 
 func (u *User) TableName() string {

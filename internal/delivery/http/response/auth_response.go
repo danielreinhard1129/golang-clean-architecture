@@ -10,3 +10,7 @@ type AuthLoginResponse struct {
 type AuthRegisterResponse struct {
 	Message string `json:"message"`
 }
+
+type AuthVerifyAccountResponse struct {
+	Message string `json:"message"`
+}

@@ -20,6 +20,7 @@ func NewAuthHandler(usecase *usecase.AuthUsecase) *AuthHandler {
 func (h *AuthHandler) Route(app *fiber.App) {
 	app.Post("/v1/auth/login", h.Login)
 	app.Post("/v1/auth/register", h.Register)
+	app.Post("/v1/auth/verify", h.VerifyAccount)
 }
 
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
@@ -54,5 +55,22 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(response.AuthRegisterResponse{
 		Message: "Register success",
+	})
+}
+
+func (h *AuthHandler) VerifyAccount(c *fiber.Ctx) error {
+	var reqBody request.AuthVerifyAccountRequest
+	err := c.BodyParser(&reqBody)
+	exception.PanicLogging(err)
+
+	validation.Validate(&reqBody)
+
+	err = h.AuthUsecase.VerifyAccount(c.UserContext(), &reqBody)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.AuthVerifyAccountResponse{
+		Message: "Verify account success",
 	})
 }

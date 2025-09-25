@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Verifikasi Akun</title>
+    <title>Account Verification</title>
   </head>
   <body
     style="
@@ -14,11 +14,19 @@
       padding: 20px;
     "
   >
-    <p>Halo,</p>
-    <p>Silakan klik link berikut untuk verifikasi akunmu:</p>
-    <p>
-      <a href="{{.VerifyLink}}" style="color: #2563eb">Verify link here</a>
+    <p>Hello,</p>
+    <p>Please use the following OTP code to verify your account:</p>
+    <p
+      style="
+        font-size: 24px;
+        font-weight: bold;
+        letter-spacing: 4px;
+        color: #2563eb;
+      "
+    >
+      {{.OTP}}
     </p>
-    <p>Terima kasih 🙏</p>
+    <p>This code is valid for {{.ExpiredMinutes}} minutes.</p>
+    <p>Thank you 🙏</p>
   </body>
 </html>

@@ -11,7 +11,7 @@ import (
 
 func main() {
 
-	stmts, err := gormschema.New("postgres").Load(&entities.User{}, &entities.Token{}) // add new entities here
+	stmts, err := gormschema.New("postgres").Load(&entities.User{}, &entities.VerificationCode{}) // add new entities here
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to load gorm schema: %v\n", err)
 		os.Exit(1)
