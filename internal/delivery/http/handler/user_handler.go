@@ -32,7 +32,7 @@ func (h *UserHandler) Route(app *fiber.App) {
 func (h *UserHandler) FindAll(c *fiber.Ctx) error {
 	qp := request.ParseAndValidate(c)
 
-	result, total := h.UserUsecase.FindAll(qp.Search, qp.OrderBy, qp.Sort, qp.Page, qp.Limit)
+	result, total := h.UserUsecase.FindAll(c.UserContext(), qp.Search, qp.OrderBy, qp.Sort, qp.Page, qp.Limit)
 
 	return c.Status(fiber.StatusOK).JSON(pagination.Response[entities.User]{
 		Data: result,
@@ -48,7 +48,7 @@ func (h *UserHandler) FindById(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	exception.PanicLogging(err)
 
-	result, err := h.UserUsecase.FindById(id)
+	result, err := h.UserUsecase.FindById(c.UserContext(), id)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (h *UserHandler) Create(c *fiber.Ctx) error {
 
 	validation.Validate(&reqBody)
 
-	result, err := h.UserUsecase.Create(&reqBody)
+	result, err := h.UserUsecase.Create(c.UserContext(), &reqBody)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (h *UserHandler) Update(c *fiber.Ctx) error {
 
 	validation.Validate(&reqBody)
 
-	result, err := h.UserUsecase.Update(id, &reqBody)
+	result, err := h.UserUsecase.Update(c.UserContext(), id, &reqBody)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (h *UserHandler) Delete(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	exception.PanicLogging(err)
 
-	err = h.UserUsecase.Delete(id)
+	err = h.UserUsecase.Delete(c.UserContext(), id)
 	if err != nil {
 		return err
 	}

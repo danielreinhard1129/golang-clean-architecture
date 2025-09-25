@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/delivery/http/request"
@@ -12,35 +13,35 @@ import (
 )
 
 type UserUsecase interface {
-	FindAll(search, orderBy, sort string, page, limit int) ([]entities.User, int64)
-	FindById(id int) (entities.User, error)
-	Create(reqBody *request.UserCreateRequest) (entities.User, error)
-	Update(id int, reqBody *request.UserUpdateRequest) (entities.User, error)
-	Delete(id int) error
+	FindAll(ctx context.Context, search, orderBy, sort string, page, limit int) ([]entities.User, int64)
+	FindById(ctx context.Context, id int) (entities.User, error)
+	Create(ctx context.Context, reqBody *request.UserCreateRequest) (entities.User, error)
+	Update(ctx context.Context, id int, reqBody *request.UserUpdateRequest) (entities.User, error)
+	Delete(ctx context.Context, id int) error
 }
 
 type userUsecaseImpl struct {
-	repo        repository.UserRepository
+	adapter     repository.Adapter
 	mailService mail.Service
 }
 
-func NewUserUsecase(repository *repository.UserRepository, mailService *mail.Service) UserUsecase {
-	return &userUsecaseImpl{repo: *repository, mailService: *mailService}
+func NewUserUsecase(adapter *repository.Adapter, mailService *mail.Service) UserUsecase {
+	return &userUsecaseImpl{adapter: *adapter, mailService: *mailService}
 }
 
-func (u *userUsecaseImpl) FindAll(search, orderBy, sort string, page, limit int) ([]entities.User, int64) {
+func (u *userUsecaseImpl) FindAll(ctx context.Context, search, orderBy, sort string, page, limit int) ([]entities.User, int64) {
 	offset := (page - 1) * limit
-	users, total := u.repo.FindAll(search, orderBy, sort, offset, limit)
+	users, total := u.adapter.User.FindAll(ctx, search, orderBy, sort, offset, limit)
 	return users, total
 }
 
-func (u *userUsecaseImpl) FindById(id int) (entities.User, error) {
-	return u.repo.FindById(id)
+func (u *userUsecaseImpl) FindById(ctx context.Context, id int) (entities.User, error) {
+	return u.adapter.User.FindById(ctx, id)
 }
 
-func (u *userUsecaseImpl) Create(reqBody *request.UserCreateRequest) (entities.User, error) {
+func (u *userUsecaseImpl) Create(ctx context.Context, reqBody *request.UserCreateRequest) (entities.User, error) {
 
-	_, err := u.repo.FindByEmail(reqBody.Email)
+	_, err := u.adapter.User.FindByEmail(ctx, reqBody.Email)
 
 	if err == nil {
 		return entities.User{}, exception.ConflictError{Message: "email already exists"}
@@ -70,11 +71,11 @@ func (u *userUsecaseImpl) Create(reqBody *request.UserCreateRequest) (entities.U
 		}
 	}()
 
-	return u.repo.Create(user)
+	return u.adapter.User.Create(ctx, user)
 }
 
-func (u *userUsecaseImpl) Update(id int, reqBody *request.UserUpdateRequest) (entities.User, error) {
-	user, err := u.repo.FindById(id)
+func (u *userUsecaseImpl) Update(ctx context.Context, id int, reqBody *request.UserUpdateRequest) (entities.User, error) {
+	user, err := u.adapter.User.FindById(ctx, id)
 	if err != nil {
 		return entities.User{}, exception.NotFoundError{Message: "user not found"}
 	}
@@ -84,7 +85,7 @@ func (u *userUsecaseImpl) Update(id int, reqBody *request.UserUpdateRequest) (en
 	}
 
 	if reqBody.Email != "" && reqBody.Email != user.Email {
-		_, err := u.repo.FindByEmail(reqBody.Email)
+		_, err := u.adapter.User.FindByEmail(ctx, reqBody.Email)
 		if err == nil {
 			return entities.User{}, exception.ConflictError{Message: "email already exists"}
 		}
@@ -99,7 +100,7 @@ func (u *userUsecaseImpl) Update(id int, reqBody *request.UserUpdateRequest) (en
 		user.Password = string(hashedPasswordBytes)
 	}
 
-	updatedUser, err := u.repo.Update(id, user)
+	updatedUser, err := u.adapter.User.Update(ctx, id, user)
 	if err != nil {
 		return entities.User{}, err
 	}
@@ -107,13 +108,13 @@ func (u *userUsecaseImpl) Update(id int, reqBody *request.UserUpdateRequest) (en
 	return updatedUser, nil
 }
 
-func (u *userUsecaseImpl) Delete(id int) error {
-	_, err := u.repo.FindById(id)
+func (u *userUsecaseImpl) Delete(ctx context.Context, id int) error {
+	_, err := u.adapter.User.FindById(ctx, id)
 	if err != nil {
 		return exception.NotFoundError{Message: "user not found"}
 	}
 
-	if err := u.repo.Delete(id); err != nil {
+	if err := u.adapter.User.Delete(ctx, id); err != nil {
 		return err
 	}
 

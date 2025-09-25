@@ -19,16 +19,18 @@ func main() {
 	db := configs.NewDatabase(config)
 	e := configs.NewEmail(config)
 
-	// services
+	// service
 	mailService := mail.NewMailService(e.Host, e.Port, e.Username, e.Password, e.From)
 
-	// user
-	userRepository := repository.NewUserRepository(db)
-	userUsecase := usecase.NewUserUsecase(&userRepository, mailService)
-	userHandler := handler.NewUserHandler(&userUsecase)
+	// repository adapter
+	adapter := repository.NewAdapter(db)
 
-	// auth
-	authUsecase := usecase.NewAuthUsecase(&userRepository, config)
+	// usecase
+	userUsecase := usecase.NewUserUsecase(adapter, mailService)
+	authUsecase := usecase.NewAuthUsecase(adapter, mailService, config)
+
+	// handler
+	userHandler := handler.NewUserHandler(&userUsecase)
 	authHandler := handler.NewAuthHandler(&authUsecase)
 
 	// fiber

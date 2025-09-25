@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/entities"
@@ -9,12 +10,12 @@ import (
 )
 
 type UserRepository interface {
-	FindAll(search, orderBy, sort string, offset, limit int) ([]entities.User, int64)
-	FindById(id int) (entities.User, error)
-	FindByEmail(email string) (entities.User, error)
-	Create(user entities.User) (entities.User, error)
-	Update(id int, updatedUser entities.User) (entities.User, error)
-	Delete(id int) error
+	FindAll(ctx context.Context, search, orderBy, sort string, offset, limit int) ([]entities.User, int64)
+	FindById(ctx context.Context, id int) (entities.User, error)
+	FindByEmail(ctx context.Context, email string) (entities.User, error)
+	Create(ctx context.Context, user entities.User) (entities.User, error)
+	Update(ctx context.Context, id int, updatedUser entities.User) (entities.User, error)
+	Delete(ctx context.Context, id int) error
 }
 
 type userRepositoryImpl struct {
@@ -25,11 +26,11 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepositoryImpl{DB: db}
 }
 
-func (r *userRepositoryImpl) FindAll(search, orderBy, sort string, offset, limit int) ([]entities.User, int64) {
+func (r *userRepositoryImpl) FindAll(ctx context.Context, search, orderBy, sort string, offset, limit int) ([]entities.User, int64) {
 	var users []entities.User
 	var total int64
 
-	query := r.DB.Model(&entities.User{})
+	query := r.DB.WithContext(ctx).Model(&entities.User{})
 
 	if search != "" {
 		query = query.Where("name LIKE ? OR email LIKE ?", "%"+search+"%", "%"+search+"%")
@@ -53,9 +54,9 @@ func (r *userRepositoryImpl) FindAll(search, orderBy, sort string, offset, limit
 	return users, total
 }
 
-func (r *userRepositoryImpl) FindById(id int) (entities.User, error) {
+func (r *userRepositoryImpl) FindById(ctx context.Context, id int) (entities.User, error) {
 	var user entities.User
-	if err := r.DB.First(&user, id).Error; err != nil {
+	if err := r.DB.WithContext(ctx).First(&user, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entities.User{}, exception.NotFoundError{Message: "user not found"}
 		}
@@ -64,9 +65,9 @@ func (r *userRepositoryImpl) FindById(id int) (entities.User, error) {
 	return user, nil
 }
 
-func (r *userRepositoryImpl) FindByEmail(email string) (entities.User, error) {
+func (r *userRepositoryImpl) FindByEmail(ctx context.Context, email string) (entities.User, error) {
 	var user entities.User
-	if err := r.DB.Where("email = ?", email).First(&user).Error; err != nil {
+	if err := r.DB.WithContext(ctx).Where("email = ?", email).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entities.User{}, exception.NotFoundError{Message: "email not found"}
 		}
@@ -75,38 +76,38 @@ func (r *userRepositoryImpl) FindByEmail(email string) (entities.User, error) {
 	return user, nil
 }
 
-func (r *userRepositoryImpl) Create(user entities.User) (entities.User, error) {
-	err := r.DB.Create(&user).Error
+func (r *userRepositoryImpl) Create(ctx context.Context, user entities.User) (entities.User, error) {
+	err := r.DB.WithContext(ctx).Create(&user).Error
 	return user, err
 }
 
-func (r *userRepositoryImpl) Update(id int, updatedUser entities.User) (entities.User, error) {
+func (r *userRepositoryImpl) Update(ctx context.Context, id int, updatedUser entities.User) (entities.User, error) {
 	var user entities.User
-	if err := r.DB.First(&user, id).Error; err != nil {
+	if err := r.DB.WithContext(ctx).First(&user, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entities.User{}, exception.NotFoundError{Message: "user not found"}
 		}
 		return entities.User{}, err
 	}
 
-	if err := r.DB.Model(&user).Updates(updatedUser).Error; err != nil {
+	if err := r.DB.WithContext(ctx).Model(&user).Updates(updatedUser).Error; err != nil {
 		return entities.User{}, err
 	}
 
 	return user, nil
 }
 
-func (r *userRepositoryImpl) Delete(id int) error {
+func (r *userRepositoryImpl) Delete(ctx context.Context, id int) error {
 	var user entities.User
 
-	if err := r.DB.First(&user, id).Error; err != nil {
+	if err := r.DB.WithContext(ctx).First(&user, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return exception.NotFoundError{Message: "user not found"}
 		}
 		return err
 	}
 
-	if err := r.DB.Delete(&user).Error; err != nil {
+	if err := r.DB.WithContext(ctx).Delete(&user).Error; err != nil {
 		return err
 	}
 
