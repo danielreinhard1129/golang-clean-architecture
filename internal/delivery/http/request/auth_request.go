@@ -15,3 +15,7 @@ type AuthVerifyAccountRequest struct {
 	Email string `json:"email" validate:"required,email"`
 	Otp   string `json:"otp" validate:"required"`
 }
+
+type AuthResendOTPRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}

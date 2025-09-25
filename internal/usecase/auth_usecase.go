@@ -21,6 +21,7 @@ type AuthUsecase interface {
 	Login(ctx context.Context, reqBody *request.AuthLoginRequest) (entities.AuthLogin, error)
 	Register(ctx context.Context, reqBody *request.AuthRegisterRequest) error
 	VerifyAccount(ctx context.Context, reqBody *request.AuthVerifyAccountRequest) error
+	ResendOTP(ctx context.Context, reqBody *request.AuthResendOTPRequest) error
 }
 
 type authUsecaseImpl struct {
@@ -92,7 +93,7 @@ func (u *authUsecaseImpl) Register(ctx context.Context, reqBody *request.AuthReg
 			return errors.New("failed to generate otp")
 		}
 
-		const otp_expired_time = 1
+		const otp_expired_time = 15
 
 		verificationCode := entities.VerificationCode{
 			UserID:    user.ID,
@@ -154,6 +155,58 @@ func (u *authUsecaseImpl) VerifyAccount(ctx context.Context, reqBody *request.Au
 		if err != nil {
 			return err
 		}
+
+		return nil
+	})
+}
+
+func (u *authUsecaseImpl) ResendOTP(ctx context.Context, reqBody *request.AuthResendOTPRequest) error {
+	return u.adapter.DB.Transaction(func(tx *gorm.DB) error {
+		txAdapter := u.adapter.WithTx(tx)
+
+		user, err := txAdapter.User.FindByEmail(ctx, reqBody.Email)
+		if err != nil {
+			return exception.NotFoundError{Message: "user not found"}
+		}
+
+		if user.VerifiedAt != nil {
+			return exception.BadRequestError{Message: "account already verified"}
+		}
+
+		err = txAdapter.VerificationCode.DeleteAllByUserAndPurpose(ctx, user.ID, "EMAIL_VERIFICATION")
+		if err != nil {
+			return err
+		}
+
+		otp, err := utils.GenerateOTP(6)
+		if err != nil {
+			return errors.New("failed to generate otp")
+		}
+
+		const otp_expired_time = 15
+		verificationCode := entities.VerificationCode{
+			UserID:    user.ID,
+			Code:      otp,
+			ExpiredAt: time.Now().Add(otp_expired_time * time.Minute),
+			Purpose:   "EMAIL_VERIFICATION",
+		}
+
+		vc, err := txAdapter.VerificationCode.Create(ctx, verificationCode)
+		if err != nil {
+			return err
+		}
+
+		go func() {
+			err := u.mailService.SendMail(
+				user.Email,
+				"Verify Your Account",
+				"verify-account.html",
+				map[string]any{"ExpiredMinutes": otp_expired_time, "OTP": vc.Code},
+			)
+			if err != nil {
+				println("failed to send email:", err.Error())
+			}
+		}()
 
 		return nil
 	})

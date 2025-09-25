@@ -21,6 +21,7 @@ func (h *AuthHandler) Route(app *fiber.App) {
 	app.Post("/v1/auth/login", h.Login)
 	app.Post("/v1/auth/register", h.Register)
 	app.Post("/v1/auth/verify", h.VerifyAccount)
+	app.Post("/v1/auth/resend-otp", h.ResendOTP)
 }
 
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
@@ -72,5 +73,22 @@ func (h *AuthHandler) VerifyAccount(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(response.AuthVerifyAccountResponse{
 		Message: "Verify account success",
+	})
+}
+
+func (h *AuthHandler) ResendOTP(c *fiber.Ctx) error {
+	var reqBody request.AuthResendOTPRequest
+	err := c.BodyParser(&reqBody)
+	exception.PanicLogging(err)
+
+	validation.Validate(&reqBody)
+
+	err = h.AuthUsecase.ResendOTP(c.UserContext(), &reqBody)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.AuthVerifyAccountResponse{
+		Message: "Resend OTP success",
 	})
 }
