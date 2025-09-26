@@ -31,17 +31,30 @@ go mod tidy
 Create a `.env` file:
 
 ```env
+# APP
+APP_PORT=8000
+
+# JWT
+JWT_SECRET=secret
+
+# DATABASE
+# 👉 When running locally (make watch / go run):
+#    - POSTGRES_HOST=localhost
+#    - POSTGRES_PORT=6543
+# 👉 When running with Docker (make docker-up):
+#    - POSTGRES_HOST=db   (because the service name in docker-compose is "db")
+#    - POSTGRES_PORT=5432 (default PostgreSQL port inside the container)
 POSTGRES_HOST=localhost
 POSTGRES_PORT=6543
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=appdb
-APP_PORT=8000
-JWT_SECRET=secret
 
+# ATLAS
 DATABASE_URL=postgres://postgres:postgres@localhost:6543/appdb?sslmode=disable
 DATABASE_DEV_URL=postgres://postgres:postgres@localhost:6543/appdb_dev?sslmode=disable
 
+# MAIL
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=email@mail.com
