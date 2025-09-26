@@ -2,8 +2,8 @@ package mail
 
 import (
 	"bytes"
+	"embed"
 	"html/template"
-	"path/filepath"
 
 	"gopkg.in/gomail.v2"
 )
@@ -13,6 +13,9 @@ type Provider struct {
 	from   string
 }
 
+//go:embed templates/*.html
+var templateFS embed.FS
+
 func NewMailProvider(host string, port int, username, password, from string) *Provider {
 	return &Provider{
 		dialer: gomail.NewDialer(host, port, username, password),
@@ -21,8 +24,7 @@ func NewMailProvider(host string, port int, username, password, from string) *Pr
 }
 
 func (p *Provider) SendMail(to, subject, templateFile string, data any) error {
-	path := filepath.Join("internal/provider/mail/templates", templateFile)
-	t, err := template.ParseFiles(path)
+	t, err := template.ParseFS(templateFS, "templates/"+templateFile)
 	if err != nil {
 		return err
 	}
