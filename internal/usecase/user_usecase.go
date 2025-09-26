@@ -6,9 +6,9 @@ import (
 
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/delivery/http/request"
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/entities"
+	"github.com/danielreinhard1129/fiber-clean-arch/internal/provider/mail"
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/repository"
 	"github.com/danielreinhard1129/fiber-clean-arch/pkg/exception"
-	"github.com/danielreinhard1129/fiber-clean-arch/pkg/mail"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -21,12 +21,12 @@ type UserUsecase interface {
 }
 
 type userUsecaseImpl struct {
-	adapter     repository.Adapter
-	mailService mail.Service
+	adapter      repository.Adapter
+	mailProvider mail.Provider
 }
 
-func NewUserUsecase(adapter *repository.Adapter, mailService *mail.Service) UserUsecase {
-	return &userUsecaseImpl{adapter: *adapter, mailService: *mailService}
+func NewUserUsecase(adapter *repository.Adapter, mailProvider *mail.Provider) UserUsecase {
+	return &userUsecaseImpl{adapter: *adapter, mailProvider: *mailProvider}
 }
 
 func (u *userUsecaseImpl) FindAll(ctx context.Context, search, orderBy, sort string, page, limit int) ([]entities.User, int64) {
@@ -60,7 +60,7 @@ func (u *userUsecaseImpl) Create(ctx context.Context, reqBody *request.UserCreat
 	}
 
 	go func() {
-		err := u.mailService.SendMail(
+		err := u.mailProvider.SendMail(
 			user.Email,
 			"Welcome to MyApp",
 			"welcome.html",

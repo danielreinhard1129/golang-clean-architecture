@@ -8,20 +8,20 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-type Service struct {
+type Provider struct {
 	dialer *gomail.Dialer
 	from   string
 }
 
-func NewMailService(host string, port int, username, password, from string) *Service {
-	return &Service{
+func NewMailProvider(host string, port int, username, password, from string) *Provider {
+	return &Provider{
 		dialer: gomail.NewDialer(host, port, username, password),
 		from:   from,
 	}
 }
 
-func (s *Service) SendMail(to, subject, templateFile string, data any) error {
-	path := filepath.Join("pkg/mail/templates", templateFile)
+func (p *Provider) SendMail(to, subject, templateFile string, data any) error {
+	path := filepath.Join("internal/provider/mail/templates", templateFile)
 	t, err := template.ParseFiles(path)
 	if err != nil {
 		return err
@@ -33,10 +33,10 @@ func (s *Service) SendMail(to, subject, templateFile string, data any) error {
 	}
 
 	m := gomail.NewMessage()
-	m.SetHeader("From", s.from)
+	m.SetHeader("From", p.from)
 	m.SetHeader("To", to)
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", body.String())
 
-	return s.dialer.DialAndSend(m)
+	return p.dialer.DialAndSend(m)
 }

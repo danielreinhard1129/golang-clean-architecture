@@ -8,9 +8,9 @@ import (
 	"github.com/danielreinhard1129/fiber-clean-arch/configs"
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/delivery/http/request"
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/entities"
+	"github.com/danielreinhard1129/fiber-clean-arch/internal/provider/mail"
 	"github.com/danielreinhard1129/fiber-clean-arch/internal/repository"
 	"github.com/danielreinhard1129/fiber-clean-arch/pkg/exception"
-	"github.com/danielreinhard1129/fiber-clean-arch/pkg/mail"
 	"github.com/danielreinhard1129/fiber-clean-arch/pkg/utils"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -25,13 +25,13 @@ type AuthUsecase interface {
 }
 
 type authUsecaseImpl struct {
-	adapter     repository.Adapter
-	config      configs.Config
-	mailService mail.Service
+	adapter      repository.Adapter
+	config       configs.Config
+	mailProvider mail.Provider
 }
 
-func NewAuthUsecase(adapter *repository.Adapter, mailService *mail.Service, config configs.Config) AuthUsecase {
-	return &authUsecaseImpl{adapter: *adapter, mailService: *mailService, config: config}
+func NewAuthUsecase(adapter *repository.Adapter, mailProvider *mail.Provider, config configs.Config) AuthUsecase {
+	return &authUsecaseImpl{adapter: *adapter, mailProvider: *mailProvider, config: config}
 }
 
 func (u *authUsecaseImpl) Login(ctx context.Context, reqBody *request.AuthLoginRequest) (entities.AuthLogin, error) {
@@ -108,7 +108,7 @@ func (u *authUsecaseImpl) Register(ctx context.Context, reqBody *request.AuthReg
 		}
 
 		go func() {
-			err := u.mailService.SendMail(
+			err := u.mailProvider.SendMail(
 				user.Email,
 				"Verify Your Account",
 				"verify-account.html",
@@ -197,7 +197,7 @@ func (u *authUsecaseImpl) ResendOTP(ctx context.Context, reqBody *request.AuthRe
 		}
 
 		go func() {
-			err := u.mailService.SendMail(
+			err := u.mailProvider.SendMail(
 				user.Email,
 				"Verify Your Account",
 				"verify-account.html",
